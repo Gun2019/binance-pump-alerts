@@ -149,18 +149,31 @@ class BinancePumpAndDumpAlerter:
         return True
 
     def filter_and_convert_assets(
-        self, exchange_assets, watchlist, blacklist, pairs_of_interest, chart_intervals
-    ):
-        filtered_assets = []
+    self, exchange_assets, watchlist, blacklist, pairs_of_interest, chart_intervals
+):
+    filtered_assets = []
 
-        for exchange_asset in exchange_assets:
-            symbol = exchange_asset["symbol"]
-
-            if self.is_symbol_valid(symbol, watchlist, blacklist, pairs_of_interest):
-                filtered_assets.append(self.create_new_asset(symbol, chart_intervals))
-                self.logger.info("Adding symbol: %s.", symbol)
-
+    # Проверим, что exchange_assets — это список
+    if not isinstance(exchange_assets, list):
+        self.logger.error("exchange_assets is not a list. Got: %s", type(exchange_assets))
         return filtered_assets
+
+    for exchange_asset in exchange_assets:
+        # Проверим, что каждый элемент — это словарь
+        if not isinstance(exchange_asset, dict):
+            self.logger.warning("Skipping non-dict asset: %s", exchange_asset)
+            continue
+
+        symbol = exchange_asset.get("symbol")
+        if not symbol:
+            self.logger.warning("Missing 'symbol' key in asset: %s", exchange_asset)
+            continue
+
+        if self.is_symbol_valid(symbol, watchlist, blacklist, pairs_of_interest):
+            filtered_assets.append(self.create_new_asset(symbol, chart_intervals))
+            self.logger.info("Adding symbol: %s.", symbol)
+
+    return filtered_assets
 
     def update_all_monitored_assets_and_send_news_messages(
         self,
